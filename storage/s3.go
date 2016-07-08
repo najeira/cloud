@@ -49,6 +49,18 @@ func (s *S3) Head(r *HeadRequest) (*HeadResponse, error) {
 	}, nil
 }
 
+func (s *S3) Copy(r *CopyRequest) (*CopyResponse, error) {
+	_, err := s.Service.CopyObject(&s3.CopyObjectInput{
+		CopySource: aws.String(r.SourceBucket + r.SourceKey),
+		Bucket:     aws.String(r.Bucket),
+		Key:        aws.String(r.Key),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &CopyResponse{}, nil
+}
+
 func (s *S3) Get(r *GetRequest) (*GetResponse, error) {
 	res, err := s.Service.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(r.Bucket),

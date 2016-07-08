@@ -16,6 +16,7 @@ const (
 )
 
 type Service interface {
+	Copy(*CopyRequest) (*CopyResponse, error)
 	Head(*HeadRequest) (*HeadResponse, error)
 	Get(*GetRequest) (*GetResponse, error)
 	Put(*PutRequest) (*PutResponse, error)
@@ -61,6 +62,16 @@ type Headers struct {
 
 	// Last modified date of the object
 	LastModified time.Time
+}
+
+type CopyRequest struct {
+	SourceBucket string
+	SourceKey    string
+	Bucket       string
+	Key          string
+}
+
+type CopyResponse struct {
 }
 
 type HeadRequest struct {

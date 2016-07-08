@@ -23,6 +23,11 @@ func NewGCS(client *http.Client) (*GCS, error) {
 	return &GCS{Service: svc}, nil
 }
 
+func (s *GCS) Copy(r *CopyRequest) (*CopyResponse, error) {
+	panic("not implemented")
+	return nil, nil
+}
+
 func (s *GCS) Head(r *HeadRequest) (*HeadResponse, error) {
 	panic("not implemented")
 	return nil, nil
