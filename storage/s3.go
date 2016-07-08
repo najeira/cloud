@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	_ Storage = (*S3)(nil)
+	_ Service = (*S3)(nil)
 )
 
 type S3 struct {

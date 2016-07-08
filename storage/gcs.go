@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	_ Storage = (*GCS)(nil)
+	_ Service = (*GCS)(nil)
 )
 
 type GCS struct {

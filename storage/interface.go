@@ -15,7 +15,7 @@ const (
 	AclPublicRead = "public-read"
 )
 
-type Storage interface {
+type Service interface {
 	Head(*HeadRequest) (*HeadResponse, error)
 	Get(*GetRequest) (*GetResponse, error)
 	Put(*PutRequest) (*PutResponse, error)
