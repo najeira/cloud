@@ -146,6 +146,10 @@ func (s *GCS) List(r *ListRequest) (*ListResponse, error) {
 		objects = append(objects, object)
 	}
 	for _, item := range resp.Items {
+		if item.Name == r.Prefix {
+			// ignore current directory it self.
+			continue
+		}
 		object := &Object{
 			Bucket:             item.Bucket,
 			CacheControl:       item.CacheControl,
