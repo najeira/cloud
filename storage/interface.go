@@ -81,6 +81,9 @@ type Object struct {
 	// format.
 	Updated string `json:"updated,omitempty"`
 	// S3: LastModified *time.Time `location:"header" locationName:"Last-Modified" type:"timestamp" timestampFormat:"rfc822"`
+
+	// Directory: Whether the object is a directory or not.
+	Directory bool
 }
 
 type Headers struct {
@@ -187,6 +190,7 @@ type DeleteMultiResponse struct {
 
 type ListRequest struct {
 	Bucket string
+	Prefix string
 	Size   int
 	Cursor string
 }
