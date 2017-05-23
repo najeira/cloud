@@ -120,8 +120,12 @@ func (s *GCS) List(r *ListRequest) (*ListResponse, error) {
 	call := s.Service.Objects.List(r.Bucket)
 	//call.Context(ctx)
 	call.Projection("full")
+	call.Delimiter("/")
 	if len(r.Cursor) > 0 {
 		call.PageToken(r.Cursor)
+	}
+	if len(r.Prefix) > 0 {
+		call.Prefix(r.Prefix)
 	}
 	if r.Size > 0 {
 		call.MaxResults(int64(r.Size))
@@ -132,9 +136,17 @@ func (s *GCS) List(r *ListRequest) (*ListResponse, error) {
 		return nil, err
 	}
 
-	objects := make([]*Object, len(resp.Items))
-	for i, item := range resp.Items {
-		objects[i] = &Object{
+	objects := make([]*Object, 0, len(resp.Prefixes)+len(resp.Items))
+	for _, prefix := range resp.Prefixes {
+		object := &Object{
+			Bucket:    r.Bucket,
+			Name:      prefix,
+			Directory: true,
+		}
+		objects = append(objects, object)
+	}
+	for _, item := range resp.Items {
+		object := &Object{
 			Bucket:             item.Bucket,
 			CacheControl:       item.CacheControl,
 			ComponentCount:     item.ComponentCount,
@@ -150,6 +162,7 @@ func (s *GCS) List(r *ListRequest) (*ListResponse, error) {
 			StorageClass:       item.StorageClass,
 			Updated:            item.Updated,
 		}
+		objects = append(objects, object)
 	}
 	return &ListResponse{
 		Objects: objects,
