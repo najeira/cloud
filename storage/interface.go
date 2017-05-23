@@ -24,7 +24,63 @@ type Service interface {
 	DeleteMulti(*DeleteMultiRequest) (*DeleteMultiResponse, error)
 }
 
-type Object interface {
+// Object: An object.
+type Object struct {
+	// Bucket: The name of the bucket containing this object.
+	Bucket string `json:"bucket,omitempty"`
+
+	// CacheControl: Cache-Control directive for the object data. If
+	// omitted, and the object is accessible to all anonymous users, the
+	// default will be public, max-age=3600.
+	CacheControl string `json:"cacheControl,omitempty"`
+
+	// ComponentCount: Number of underlying components that make up this
+	// object. Components are accumulated by compose operations.
+	ComponentCount int64 `json:"componentCount,omitempty"`
+	// S3: PartsCount *int64 `location:"header" locationName:"x-amz-mp-parts-count" type:"integer"`
+
+	// ContentDisposition: Content-Disposition of the object data.
+	ContentDisposition string `json:"contentDisposition,omitempty"`
+
+	// ContentEncoding: Content-Encoding of the object data.
+	ContentEncoding string `json:"contentEncoding,omitempty"`
+
+	// ContentLanguage: Content-Language of the object data.
+	ContentLanguage string `json:"contentLanguage,omitempty"`
+
+	// ContentType: Content-Type of the object data. If contentType is not
+	// specified, object downloads will be served as
+	// application/octet-stream.
+	ContentType string `json:"contentType,omitempty"`
+
+	// Etag: HTTP 1.1 Entity tag for the object.
+	Etag string `json:"etag,omitempty"`
+
+	// Generation: The content generation of this object. Used for object
+	// versioning.
+	Generation int64 `json:"generation,omitempty,string"`
+	// S3: VersionId *string `location:"header" locationName:"x-amz-version-id" type:"string"`
+
+	// Metadata: User-provided metadata, in key/value pairs.
+	Metadata map[string]string `json:"metadata,omitempty"`
+	// S3: Metadata map[string]*string `location:"headers" locationName:"x-amz-meta-" type:"map"`
+
+	// Name: The name of the object. Required if not specified by URL
+	// parameter.
+	Name string `json:"name,omitempty"`
+
+	// Size: Content-Length of the data in bytes.
+	Size uint64 `json:"size,omitempty,string"`
+	// S3: ContentLength *int64 `location:"header" locationName:"Content-Length" type:"long"`
+
+	// StorageClass: Storage class of the object.
+	StorageClass string `json:"storageClass,omitempty"`
+	// S3: StorageClass *string `location:"header" locationName:"x-amz-storage-class" type:"string" enum:"StorageClass"`
+
+	// Updated: The modification time of the object metadata in RFC 3339
+	// format.
+	Updated string `json:"updated,omitempty"`
+	// S3: LastModified *time.Time `location:"header" locationName:"Last-Modified" type:"timestamp" timestampFormat:"rfc822"`
 }
 
 type Headers struct {
@@ -127,4 +183,15 @@ type DeleteMultiRequest struct {
 type DeleteMultiResponse struct {
 	Keys   []string
 	Errors []error
+}
+
+type ListRequest struct {
+	Bucket string
+	Size   int
+	Cursor string
+}
+
+type ListResponse struct {
+	Objects []*Object
+	Cursor  string
 }

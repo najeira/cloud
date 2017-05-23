@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
+	"unicode/utf8"
 
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/storage/v1"
@@ -39,28 +42,45 @@ func (s *GCS) Get(r *GetRequest) (*GetResponse, error) {
 }
 
 func (s *GCS) Put(r *PutRequest) (*PutResponse, error) {
-	object := &storage.Object{Name: r.Key}
-	object.CacheControl = r.CacheControl
-	object.ContentEncoding = r.ContentEncoding
-	object.ContentLanguage = r.ContentLanguage
-	object.ContentDisposition = r.ContentDisposition
+	if r.Bucket == "" {
+		return nil, errors.New("storage: bucket name is empty")
+	} else if r.Key == "" {
+		return nil, errors.New("storage: object name is empty")
+	} else if r.Body == nil {
+		return nil, errors.New("storage: object body is nil")
+	} else if !utf8.ValidString(r.Key) {
+		return nil, fmt.Errorf("storage: object name %q is not valid UTF-8", r.Key)
+	}
+
+	object := &storage.Object{
+		Bucket:             r.Bucket,
+		Name:               r.Key,
+		ContentEncoding:    r.ContentEncoding,
+		ContentLanguage:    r.ContentLanguage,
+		CacheControl:       r.CacheControl,
+		ContentDisposition: r.ContentDisposition,
+		//StorageClass:       r.StorageClass,
+	}
+
+	mediaOpts := []googleapi.MediaOption{
+		googleapi.ChunkSize(googleapi.DefaultUploadChunkSize),
+	}
+	if r.ContentType != "" {
+		mediaOpts = append(mediaOpts, googleapi.ContentType(r.ContentType))
+	}
 
 	call := s.Service.Objects.Insert(r.Bucket, object)
+	//call.Context(ctx)
 
-	var acl string
 	switch r.ACL {
 	case AclPrivate:
-		acl = "private"
+		call.PredefinedAcl("private")
 	case AclPublicRead:
-		acl = "publicRead"
+		call.PredefinedAcl("publicRead")
 	}
-	call.PredefinedAcl(acl)
 
-	if r.ContentType != "" {
-		call.Media(r.Body, googleapi.ContentType(r.ContentType))
-	} else {
-		call.Media(r.Body)
-	}
+	call.Media(r.Body, mediaOpts...)
+	call.Projection("full")
 
 	_, err := call.Do()
 	if err != nil {
@@ -70,11 +90,69 @@ func (s *GCS) Put(r *PutRequest) (*PutResponse, error) {
 }
 
 func (s *GCS) Delete(r *DeleteRequest) (*DeleteResponse, error) {
-	panic("not implemented")
-	return nil, nil
+	if r.Bucket == "" {
+		return nil, errors.New("storage: bucket name is empty")
+	} else if r.Key == "" {
+		return nil, errors.New("storage: object name is empty")
+	} else if !utf8.ValidString(r.Key) {
+		return nil, fmt.Errorf("storage: object name %q is not valid UTF-8", r.Key)
+	}
+
+	call := s.Service.Objects.Delete(r.Bucket, r.Key)
+	//call.Context(ctx)
+	err := call.Do()
+	if err != nil {
+		return nil, err
+	}
+	return &DeleteResponse{}, nil
 }
 
 func (s *GCS) DeleteMulti(r *DeleteMultiRequest) (*DeleteMultiResponse, error) {
 	panic("not implemented")
 	return nil, nil
+}
+
+func (s *GCS) List(r *ListRequest) (*ListResponse, error) {
+	if r.Bucket == "" {
+		return nil, errors.New("storage: bucket name is empty")
+	}
+
+	call := s.Service.Objects.List(r.Bucket)
+	//call.Context(ctx)
+	call.Projection("full")
+	if len(r.Cursor) > 0 {
+		call.PageToken(r.Cursor)
+	}
+	if r.Size > 0 {
+		call.MaxResults(int64(r.Size))
+	}
+
+	resp, err := call.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	objects := make([]*Object, len(resp.Items))
+	for i, item := range resp.Items {
+		objects[i] = &Object{
+			Bucket:             item.Bucket,
+			CacheControl:       item.CacheControl,
+			ComponentCount:     item.ComponentCount,
+			ContentDisposition: item.ContentDisposition,
+			ContentEncoding:    item.ContentEncoding,
+			ContentLanguage:    item.ContentLanguage,
+			ContentType:        item.ContentType,
+			Etag:               item.Etag,
+			Generation:         item.Generation,
+			Metadata:           item.Metadata,
+			Name:               item.Name,
+			Size:               item.Size,
+			StorageClass:       item.StorageClass,
+			Updated:            item.Updated,
+		}
+	}
+	return &ListResponse{
+		Objects: objects,
+		Cursor:  resp.NextPageToken,
+	}, nil
 }
